@@ -1,3 +1,4 @@
-/root/Programming/_CPP_courses/LFU cache/build/CMakeFiles/cache_comparison.dir
+/root/Programming/_CPP_courses/LFU cache/build/CMakeFiles/lfu_cache.dir
+/root/Programming/_CPP_courses/LFU cache/build/CMakeFiles/ideal_cache.dir
 /root/Programming/_CPP_courses/LFU cache/build/CMakeFiles/edit_cache.dir
 /root/Programming/_CPP_courses/LFU cache/build/CMakeFiles/rebuild_cache.dir

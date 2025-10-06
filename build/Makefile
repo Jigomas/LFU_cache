@@ -117,24 +117,61 @@ depend:
 .PHONY : depend
 
 #=============================================================================
-# Target rules for targets named cache_comparison
+# Target rules for targets named lfu_cache
 
 # Build rule for target.
-cache_comparison: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 cache_comparison
-.PHONY : cache_comparison
+lfu_cache: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 lfu_cache
+.PHONY : lfu_cache
 
 # fast build rule for target.
-cache_comparison/fast:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/cache_comparison.dir/build.make CMakeFiles/cache_comparison.dir/build
-.PHONY : cache_comparison/fast
+lfu_cache/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/lfu_cache.dir/build.make CMakeFiles/lfu_cache.dir/build
+.PHONY : lfu_cache/fast
+
+#=============================================================================
+# Target rules for targets named ideal_cache
+
+# Build rule for target.
+ideal_cache: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 ideal_cache
+.PHONY : ideal_cache
+
+# fast build rule for target.
+ideal_cache/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ideal_cache.dir/build.make CMakeFiles/ideal_cache.dir/build
+.PHONY : ideal_cache/fast
+
+src/ideal_cache.o: src/ideal_cache.cpp.o
+.PHONY : src/ideal_cache.o
+
+# target to build an object file
+src/ideal_cache.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ideal_cache.dir/build.make CMakeFiles/ideal_cache.dir/src/ideal_cache.cpp.o
+.PHONY : src/ideal_cache.cpp.o
+
+src/ideal_cache.i: src/ideal_cache.cpp.i
+.PHONY : src/ideal_cache.i
+
+# target to preprocess a source file
+src/ideal_cache.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ideal_cache.dir/build.make CMakeFiles/ideal_cache.dir/src/ideal_cache.cpp.i
+.PHONY : src/ideal_cache.cpp.i
+
+src/ideal_cache.s: src/ideal_cache.cpp.s
+.PHONY : src/ideal_cache.s
+
+# target to generate assembly for a file
+src/ideal_cache.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ideal_cache.dir/build.make CMakeFiles/ideal_cache.dir/src/ideal_cache.cpp.s
+.PHONY : src/ideal_cache.cpp.s
 
 src/lfu_cache.o: src/lfu_cache.cpp.o
 .PHONY : src/lfu_cache.o
 
 # target to build an object file
 src/lfu_cache.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/cache_comparison.dir/build.make CMakeFiles/cache_comparison.dir/src/lfu_cache.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/lfu_cache.dir/build.make CMakeFiles/lfu_cache.dir/src/lfu_cache.cpp.o
 .PHONY : src/lfu_cache.cpp.o
 
 src/lfu_cache.i: src/lfu_cache.cpp.i
@@ -142,7 +179,7 @@ src/lfu_cache.i: src/lfu_cache.cpp.i
 
 # target to preprocess a source file
 src/lfu_cache.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/cache_comparison.dir/build.make CMakeFiles/cache_comparison.dir/src/lfu_cache.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/lfu_cache.dir/build.make CMakeFiles/lfu_cache.dir/src/lfu_cache.cpp.i
 .PHONY : src/lfu_cache.cpp.i
 
 src/lfu_cache.s: src/lfu_cache.cpp.s
@@ -150,7 +187,7 @@ src/lfu_cache.s: src/lfu_cache.cpp.s
 
 # target to generate assembly for a file
 src/lfu_cache.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/cache_comparison.dir/build.make CMakeFiles/cache_comparison.dir/src/lfu_cache.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/lfu_cache.dir/build.make CMakeFiles/lfu_cache.dir/src/lfu_cache.cpp.s
 .PHONY : src/lfu_cache.cpp.s
 
 # Help Target
@@ -161,7 +198,11 @@ help:
 	@echo "... depend"
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
-	@echo "... cache_comparison"
+	@echo "... ideal_cache"
+	@echo "... lfu_cache"
+	@echo "... src/ideal_cache.o"
+	@echo "... src/ideal_cache.i"
+	@echo "... src/ideal_cache.s"
 	@echo "... src/lfu_cache.o"
 	@echo "... src/lfu_cache.i"
 	@echo "... src/lfu_cache.s"
