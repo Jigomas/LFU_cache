@@ -29,6 +29,7 @@ size_t RunLfu()
 
     if (!(std::cin >> cache_size >> element_count)) {
         std::cout << "Error reading cache parameters " << std::endl;
+
         return 0;
     }
 
@@ -39,6 +40,7 @@ size_t RunLfu()
         int element = 0;
         if (!(std::cin >> element)) {
             std::cout << "Error reading element " << i + 1 << std::endl;
+            
             break;
         }
 

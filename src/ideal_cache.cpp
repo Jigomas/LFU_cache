@@ -28,6 +28,7 @@ size_t RunIdeal()
 
     if (!(std::cin >> cache_size >> element_count)) {
         std::cout << "Error reading cache parameters " << std::endl;
+
         return 0;
     }
 
@@ -36,10 +37,10 @@ size_t RunIdeal()
     std::unordered_map<int, std::vector<size_t>> access_map;
 
     for (size_t i = 0; i < element_count; ++i) {
-        //cache.DumpCache();
         int element = 0;
         if (!(std::cin >> element)) {
             std::cout << "Error reading element " << i + 1 << std::endl;
+
             break;
         }
         elements.push_back(element);
@@ -51,6 +52,7 @@ size_t RunIdeal()
     }
 
     for (int element : elements) {
+        cache.DumpCache();
         if (cache.Get(element) != nullptr) 
             ++hit_count;
         else 

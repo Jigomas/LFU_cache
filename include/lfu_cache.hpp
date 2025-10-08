@@ -58,6 +58,7 @@ void LfuCache<KeyT, ValueT>::Put(const KeyT& key, const ValueT& value) {
 	if (it != data_.end()) {
 		it->second = value;
 		Promote(key);
+        
 		return;
 	}
 

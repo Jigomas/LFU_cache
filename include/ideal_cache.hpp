@@ -41,6 +41,8 @@ template<typename KeyT, typename ValueT>
 IdealCache<KeyT, ValueT>::IdealCache(size_t capacity)
 	: capacity_(capacity), size_(0), current_access_index_(0) {}
 
+
+
 template<typename KeyT, typename ValueT>
 void IdealCache<KeyT, ValueT>::LoadAccessPattern(KeyT key, const std::vector<size_t>& access_times) {
 	std::queue<size_t> time_queue;
@@ -59,8 +61,8 @@ ValueT* IdealCache<KeyT, ValueT>::Get(KeyT key) {
 		return nullptr;
 	}
 
-	UpdateNextUses();
 	++current_access_index_;
+	UpdateNextUses();
 	
 	return &(it->second.data);
 }
@@ -69,33 +71,53 @@ ValueT* IdealCache<KeyT, ValueT>::Get(KeyT key) {
 
 template<typename KeyT, typename ValueT>
 void IdealCache<KeyT, ValueT>::Put(const KeyT& key, const ValueT& value) {
-	if (capacity_ == 0) return;
+    if (capacity_ == 0) return;
 
-	UpdateNextUses();
+    ++current_access_index_;
+    UpdateNextUses();
 
-	auto it = data_.find(key);
-	if (it != data_.end()) {
-		it->second.data = value;
-		return;
-	}
+    auto it = data_.find(key);
+    if (it != data_.end()) {
+        it->second.data = value;
+		
+        return;
+    }
 
-	if (size_ >= capacity_) {
-		Remove();
-	}
+    auto seq_it = access_sequence_.find(key);
+    if (seq_it == access_sequence_.end() || seq_it->second.empty()) {
+        return;
+    }
 
-	auto seq_it = access_sequence_.find(key);
-	if (seq_it == access_sequence_.end() || seq_it->second.empty()) {
-		return;
-	}
+    seq_it->second.pop();
+    
+    if (seq_it->second.empty()) {
+        return;
+    }
 
-	CacheEntry new_entry;
-	new_entry.data = value;
-	new_entry.next_use = seq_it->second.front();
-	seq_it->second.pop();
+    size_t new_next_use = seq_it->second.front();
 
-	data_.emplace(key, new_entry);
-	++size_;
-	++current_access_index_;
+    if (size_ >= capacity_) {
+        auto max_it = data_.begin();
+        for (auto it = data_.begin(); it != data_.end(); ++it) {
+            if (it->second.next_use > max_it->second.next_use) {
+                max_it = it;
+            }
+        }
+
+        if (new_next_use < max_it->second.next_use) {
+            data_.erase(max_it);
+            --size_;
+        } else {
+            return;
+        }
+    }
+
+    CacheEntry new_entry;
+    new_entry.data = value;
+    new_entry.next_use = new_next_use;
+
+    data_.emplace(key, new_entry);
+    ++size_;
 }
 
 
@@ -109,8 +131,9 @@ bool IdealCache<KeyT, ValueT>::Contains(KeyT key) const {
 
 template<typename KeyT, typename ValueT>
 void IdealCache<KeyT, ValueT>::DumpCache() const {
-	std::cout << "Capacity: " << capacity_ << ", Size: " << size_ << std::endl;
-	std::cout << "Data contents:" << std::endl;
+	std::cout << "Index: " << current_access_index_ << std::endl;
+	//std::cout << "Capacity: " << capacity_ << ", Size: " << size_ << std::endl;
+	//std::cout << "Data contents:" << std::endl;
 	for (const auto& entry : data_) {
 		std::cout << "  " << entry.first << " -> " << entry.second.data 
 				  << " | Next Use: " << entry.second.next_use << std::endl;
