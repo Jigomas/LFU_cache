@@ -2,7 +2,7 @@
 
 #include <algorithm>
 #include <iostream>
-#include <queue>
+#include <vector>
 #include <unordered_map>
 #include <limits>
 
@@ -31,8 +31,13 @@ private:
 		size_t next_use;
 	};
 
-	std::unordered_map<KeyT, std::queue<size_t>>    access_sequence_;
-	std::unordered_map<KeyT, CacheEntry>            data_;
+	struct KeyAccess {
+		std::vector<size_t> accesses;
+		size_t current_index;
+	};
+
+	std::unordered_map<KeyT, KeyAccess>    access_sequence_;
+	std::unordered_map<KeyT, CacheEntry>   data_;
 	size_t capacity_;
 	size_t size_;
 	size_t current_access_index_;
@@ -42,20 +47,16 @@ private:
 
 template<typename KeyT, typename ValueT>
 IdealCache<KeyT, ValueT>::IdealCache(size_t capacity)
-    : capacity_(capacity), size_(0), current_access_index_(0) {
-    data_.reserve(capacity_);                    
-    access_sequence_.reserve(capacity_ * 3);     
+	: capacity_(capacity), size_(0), current_access_index_(0) {
+	data_.reserve(capacity_);                    
+	access_sequence_.reserve(capacity_ * 3);     
 }
 
 
 
 template<typename KeyT, typename ValueT>
 void IdealCache<KeyT, ValueT>::LoadAccessPattern(KeyT key, const std::vector<size_t>& access_times) {
-	std::queue<size_t> time_queue;
-	for (auto time : access_times) {
-		time_queue.push(time);
-	}
-	access_sequence_[key] = time_queue;
+	access_sequence_[key] = KeyAccess{access_times, 0};
 }
 
 
@@ -75,47 +76,51 @@ ValueT* IdealCache<KeyT, ValueT>::Get(KeyT key) {
 
 
 
-
 template<typename KeyT, typename ValueT>
 void IdealCache<KeyT, ValueT>::Put(const KeyT& key, const ValueT& value) {
-    if (capacity_ == 0) return;
+	if (capacity_ == 0) return;
 
-    ++current_access_index_;
-    UpdateNextUses();
+	++current_access_index_;
+	UpdateNextUses();
 
-    if (data_.find(key) != data_.end()) {
-        data_[key].data = value;
-        return;
-    }
+	if (data_.find(key) != data_.end()) {
+		data_[key].data = value;
+		return;
+	}
 
-    auto seq_it = access_sequence_.find(key);
-    if (seq_it == access_sequence_.end() || seq_it->second.empty()) {
-        return;
-    }
+	auto seq_it = access_sequence_.find(key);
+	if (seq_it == access_sequence_.end()) {
+		return;
+	}
 
-    seq_it->second.pop();
-    if (seq_it->second.empty()) {
-        return;
-    }
+	auto& access = seq_it->second;
+	if (access.current_index >= access.accesses.size()) {
+		return;
+	}
 
-    size_t new_next_use = seq_it->second.front();
+	++access.current_index;
+	if (access.current_index >= access.accesses.size()) {
+		return;
+	}
 
-    if (size_ >= capacity_) {
-        auto max_it = std::max_element(data_.begin(), data_.end(),
-            [](const auto& a, const auto& b) {
-                return a.second.next_use < b.second.next_use;
-            });
+	size_t new_next_use = access.accesses[access.current_index];
 
-        if (new_next_use >= max_it->second.next_use) {
-            return;
-        }
-        
-        data_.erase(max_it);
-        --size_;
-    }
+	if (size_ >= capacity_) {
+		auto max_it = std::max_element(data_.begin(), data_.end(),
+			[](const auto& a, const auto& b) {
+				return a.second.next_use < b.second.next_use;
+			});
 
-    data_.emplace(key, CacheEntry{value, new_next_use});
-    ++size_;
+		if (new_next_use >= max_it->second.next_use) {
+			return;
+		}
+		
+		data_.erase(max_it);
+		--size_;
+	}
+
+	data_.emplace(key, CacheEntry{value, new_next_use});
+	++size_;
 }
 
 
@@ -153,34 +158,42 @@ size_t IdealCache<KeyT, ValueT>::GetMaxSize() const {
 }
 
 
+
 template<typename KeyT, typename ValueT>
 void IdealCache<KeyT, ValueT>::UpdateNextUses() {
-    for (auto& [key, entry] : data_) {
-        auto seq_it = access_sequence_.find(key);
-        if (seq_it == access_sequence_.end()) {
-            entry.next_use = std::numeric_limits<size_t>::max();
-            continue;
-        }        
-        auto& queue = seq_it->second;
-        while (!queue.empty() && queue.front() <= current_access_index_) {
-            queue.pop();
-        }
-        
-        entry.next_use = queue.empty() ? std::numeric_limits<size_t>::max() : queue.front();
-    }
+	static constexpr size_t MAX_USE = std::numeric_limits<size_t>::max();
+	
+	for (auto& [key, entry] : data_) {
+		auto seq_it = access_sequence_.find(key);
+		if (seq_it == access_sequence_.end()) {
+			entry.next_use = MAX_USE;
+			continue;
+		}
+
+		auto& access = seq_it->second;
+		size_t& idx = access.current_index;
+		const auto& accesses = access.accesses;
+		
+		while (idx < accesses.size() && accesses[idx] <= current_access_index_) {
+			++idx;
+		}
+
+		entry.next_use = (idx < accesses.size()) ? accesses[idx] : MAX_USE;
+	}
 }
+
+
 
 
 template<typename KeyT, typename ValueT>
 void IdealCache<KeyT, ValueT>::Remove() {
-    if (data_.empty()) return;
+	if (data_.empty()) return;
 
-    auto target = std::max_element(data_.begin(), data_.end(), 
-        [](const auto& a, const auto& b) {
-            return a.second.next_use < b.second.next_use;
-        });
-    
-    data_.erase(target);
-    --size_;
+	auto target = std::max_element(data_.begin(), data_.end(), 
+		[](const auto& a, const auto& b) {
+			return a.second.next_use < b.second.next_use;
+		});
+	
+	data_.erase(target);
+	--size_;
 }
-
