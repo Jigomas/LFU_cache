@@ -1,9 +1,12 @@
 #pragma once
 
+#include <algorithm>
 #include <iostream>
 #include <queue>
 #include <unordered_map>
 #include <limits>
+
+
 
 template<typename KeyT, typename ValueT>
 class IdealCache {
@@ -39,7 +42,10 @@ private:
 
 template<typename KeyT, typename ValueT>
 IdealCache<KeyT, ValueT>::IdealCache(size_t capacity)
-	: capacity_(capacity), size_(0), current_access_index_(0) {}
+    : capacity_(capacity), size_(0), current_access_index_(0) {
+    data_.reserve(capacity_);                    
+    access_sequence_.reserve(capacity_ * 3);     
+}
 
 
 
@@ -69,6 +75,7 @@ ValueT* IdealCache<KeyT, ValueT>::Get(KeyT key) {
 
 
 
+
 template<typename KeyT, typename ValueT>
 void IdealCache<KeyT, ValueT>::Put(const KeyT& key, const ValueT& value) {
     if (capacity_ == 0) return;
@@ -76,10 +83,8 @@ void IdealCache<KeyT, ValueT>::Put(const KeyT& key, const ValueT& value) {
     ++current_access_index_;
     UpdateNextUses();
 
-    auto it = data_.find(key);
-    if (it != data_.end()) {
-        it->second.data = value;
-		
+    if (data_.find(key) != data_.end()) {
+        data_[key].data = value;
         return;
     }
 
@@ -89,7 +94,6 @@ void IdealCache<KeyT, ValueT>::Put(const KeyT& key, const ValueT& value) {
     }
 
     seq_it->second.pop();
-    
     if (seq_it->second.empty()) {
         return;
     }
@@ -97,26 +101,20 @@ void IdealCache<KeyT, ValueT>::Put(const KeyT& key, const ValueT& value) {
     size_t new_next_use = seq_it->second.front();
 
     if (size_ >= capacity_) {
-        auto max_it = data_.begin();
-        for (auto it = data_.begin(); it != data_.end(); ++it) {
-            if (it->second.next_use > max_it->second.next_use) {
-                max_it = it;
-            }
-        }
+        auto max_it = std::max_element(data_.begin(), data_.end(),
+            [](const auto& a, const auto& b) {
+                return a.second.next_use < b.second.next_use;
+            });
 
-        if (new_next_use < max_it->second.next_use) {
-            data_.erase(max_it);
-            --size_;
-        } else {
+        if (new_next_use >= max_it->second.next_use) {
             return;
         }
+        
+        data_.erase(max_it);
+        --size_;
     }
 
-    CacheEntry new_entry;
-    new_entry.data = value;
-    new_entry.next_use = new_next_use;
-
-    data_.emplace(key, new_entry);
+    data_.emplace(key, CacheEntry{value, new_next_use});
     ++size_;
 }
 
@@ -155,43 +153,34 @@ size_t IdealCache<KeyT, ValueT>::GetMaxSize() const {
 }
 
 
-
 template<typename KeyT, typename ValueT>
 void IdealCache<KeyT, ValueT>::UpdateNextUses() {
-	for (auto& [key, entry] : data_) {
-		auto seq_it = access_sequence_.find(key);
-		if (seq_it != access_sequence_.end()) {
-			while (!seq_it->second.empty() && seq_it->second.front() <= current_access_index_) {
-				seq_it->second.pop();
-			}
-			
-			if (!seq_it->second.empty()) {
-				entry.next_use = seq_it->second.front();
-			} else {
-				entry.next_use = std::numeric_limits<size_t>::max();
-			}
-		} else {
-			entry.next_use = std::numeric_limits<size_t>::max();
-		}
-	}
+    for (auto& [key, entry] : data_) {
+        auto seq_it = access_sequence_.find(key);
+        if (seq_it == access_sequence_.end()) {
+            entry.next_use = std::numeric_limits<size_t>::max();
+            continue;
+        }        
+        auto& queue = seq_it->second;
+        while (!queue.empty() && queue.front() <= current_access_index_) {
+            queue.pop();
+        }
+        
+        entry.next_use = queue.empty() ? std::numeric_limits<size_t>::max() : queue.front();
+    }
 }
-
 
 
 template<typename KeyT, typename ValueT>
 void IdealCache<KeyT, ValueT>::Remove() {
-	if (data_.empty()) return;
+    if (data_.empty()) return;
 
-	auto target = data_.begin();
-	size_t furthest_use = target->second.next_use;
-
-	for (auto it = data_.begin(); it != data_.end(); ++it) {
-		if (it->second.next_use > furthest_use) {
-			furthest_use = it->second.next_use;
-			target = it;
-		}
-	}
-
-	data_.erase(target);
-	--size_;
+    auto target = std::max_element(data_.begin(), data_.end(), 
+        [](const auto& a, const auto& b) {
+            return a.second.next_use < b.second.next_use;
+        });
+    
+    data_.erase(target);
+    --size_;
 }
+

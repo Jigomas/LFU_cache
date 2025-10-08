@@ -52,11 +52,11 @@ size_t RunIdeal()
     }
 
     for (int element : elements) {
-        cache.DumpCache();
         if (cache.Get(element) != nullptr) 
             ++hit_count;
         else 
             cache.Put(element, element);
+        //cache.DumpCache();
     }
 
     return hit_count;
