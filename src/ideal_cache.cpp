@@ -1,46 +1,39 @@
 #include <iostream>
+#include <vector>
+#include <unordered_map>
 
 #include "../include/ideal_cache.hpp"
 
 
 
-size_t RunIdeal() ;
+size_t RunIdeal();
 
 
 
-int main() {
-    size_t hit_count    = 0;
-
-    //std::cout << "\n=== Running Ideal Cache Test ===\n";
-    hit_count = RunIdeal();
-    std::cout << ">>" << hit_count << std::endl;
-
+int main(int argc, char* argv[]) {
+    size_t hit_count = RunIdeal();
+    std::cout << hit_count << std::endl;
     return 0;
 }
 
 
 
-size_t RunIdeal() 
-{
-    size_t cache_size = 0;
-    size_t element_count = 0;
-    size_t hit_count = 0;
-
+size_t RunIdeal() {
+    size_t cache_size, element_count;
     if (!(std::cin >> cache_size >> element_count)) {
-        std::cout << "Error reading cache parameters " << std::endl;
-
+        std::cerr << "Error reading cache parameters" << std::endl;
         return 0;
     }
 
     IdealCache<int, int> cache(cache_size);
     std::vector<int> elements;
+    elements.reserve(element_count);
     std::unordered_map<int, std::vector<size_t>> access_map;
 
     for (size_t i = 0; i < element_count; ++i) {
-        int element = 0;
+        int element;
         if (!(std::cin >> element)) {
-            std::cout << "Error reading element " << i + 1 << std::endl;
-
+            std::cerr << "Error reading element " << i + 1 << std::endl;
             break;
         }
         elements.push_back(element);
@@ -51,11 +44,17 @@ size_t RunIdeal()
         cache.LoadAccessPattern(key, positions);
     }
 
-    for (int element : elements) {
-        if (cache.Get(element) != nullptr) 
+    size_t hit_count = 0;
+    for (size_t i = 0; i < element_count; ++i) {
+        int element = elements[i];
+        
+        if (cache.Contains(element)) {
             ++hit_count;
-        else 
-            cache.Put(element, element);
+            cache.Put(element, element, i);
+        } else {
+            cache.Put(element, element, i);
+        }
+        
         //cache.DumpCache();
     }
 
