@@ -10,7 +10,7 @@ size_t RunIdeal();
 
 
 
-int main(int argc, char* argv[]) {
+int main() {
     size_t hit_count = RunIdeal();
     std::cout << hit_count << std::endl;
     return 0;
